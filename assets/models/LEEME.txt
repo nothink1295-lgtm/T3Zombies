@@ -2,6 +2,7 @@ Modelos de personajes incluidos:
 
   zombie1.glb -> Zombi individual 1
   zombies.glb -> Zombi individual 2
+  toxic_zombie_4_idle_animated.glb -> Zombi individual 3
   demon1.glb  -> Demon 1, proyectil morado
   demon2.glb  -> Demon 2, lanza dos cohetes
   demon3.glb  -> Demon 3, lanza fuego

@@ -16,7 +16,7 @@ Alternativa sin extensión: `python -m http.server 5500` en la carpeta y abrir `
 
 ## Modelos y texturas
 
-Los modelos de zombi (`zombie1.glb` y `zombies.glb`), demonios, Necro, pistola (`pistola_9mm.glb`) y escopeta (`escopeta_mr_meat.glb`) están en `assets/models/`. Los muros metálicos usan una textura procedural generada por el juego. Cada zombi usa un modelo individual, alternando entre los dos modelos. La espada se genera en el juego con brillo rojo neón. La vista del jugador es en primera persona y no carga un modelo de personaje. Las rutas y estadísticas se ajustan en `src/config.js`. Si falta un modelo de arma, se muestra un marcador.
+Los tres modelos de zombi (`zombie1.glb`, `zombies.glb` y `toxic_zombie_4_idle_animated.glb`), los demonios, Necro, pistola (`pistola_9mm.glb`) y escopeta (`escopeta_mr_meat.glb`) están en `assets/models/`. Los zombis alternan entre los tres modelos. Los muros metálicos usan una textura procedural generada por el juego. La espada se genera en el juego con brillo rojo neón. La vista del jugador es en primera persona y no carga un modelo de personaje. Las rutas y estadísticas se ajustan en `src/config.js`. Si falta un modelo de arma, se muestra un marcador.
 
 ## Controles
 
@@ -40,7 +40,7 @@ Los modelos de zombi (`zombie1.glb` y `zombies.glb`), demonios, Necro, pistola (
 | RF02 Munición por arma de fuego, bloqueo en 0, solo cajas | `ammo[]`, `shoot`, `updatePickups` |
 | Dos laberintos con entrada y salida entre niveles | `src/level.js`, `enterLevel`, `win()` |
 | Tres cuartos de laboratorio pequeños por nivel, con mesas, muestras, gabinetes y rótulos | `labCells`, `addLabRoom`, `src/level.js` |
-| Dos modelos de zombi individuales y cuatro tipos de infectados especiales | `loadCharacterModels`, `spawnEnemy` |
+| Tres modelos de zombi individuales y cuatro tipos de infectados especiales | `loadCharacterModels`, `spawnEnemy` |
 | Los infectados permanecen inactivos fuera del rango configurable y persiguen al jugador por los pasillos cuando se activan | `CONFIG.enemy.detectionRange`, `buildEnemyDistanceField`, `updateZombies` |
 | RF09: un zombi causa Game Over al entrar en contacto con el jugador; el juego se detiene y permite reiniciar | `updateZombies`, `gameOver`, `resetGame` |
 | Mantener clic derecho con espada bloquea ataques frontales | `isAttackBlocked`, controles de ratón |
@@ -65,6 +65,7 @@ Las autorías, páginas de origen y licencias de los modelos GLB se obtuvieron d
 - Escopeta — mth01, [Sketchfab](https://sketchfab.com/3d-models/escopeta-mr-meat-82fd9e2421b3438ba3d15a1e88c3c877), CC BY 4.0.
 - Zombie Soldier — Peter_D, [Sketchfab](https://sketchfab.com/3d-models/zombie-soldier-176e930e63d144cc8f615b8dd3a8c74f), CC BY 4.0.
 - Animated Injured Zombie Crawling Loop — LasquetiSpice, [Sketchfab](https://sketchfab.com/3d-models/animated-injured-zombie-crawling-loop-92e32f2303fa4a339590c243fd6c505a), CC BY 4.0.
+- Toxic Zombie 4 Idle (animated) — vicente betoret ferrero, [Sketchfab](https://sketchfab.com/3d-models/toxic-zombie-4-idle-animated-67107a48d9e74fb080ec4584195475b5), CC BY 4.0.
 - DOOM Cacodemon — Renafox, [Sketchfab](https://sketchfab.com/3d-models/doom-cacodemon-4902b58e85ae42dea7a341148cd3831b), CC BY-NC 4.0 (uso no comercial).
 - DOOM Eternal Revenant — DJ_Nugget, [Sketchfab](https://sketchfab.com/3d-models/doom-eternal-revenant-dab547c6d03d435d8c85ab8f771184a6), CC BY 4.0.
 - DOOM Eternal Mancubus — DJ_Nugget, [Sketchfab](https://sketchfab.com/3d-models/doom-eternal-mancubus-413aac043f2143f3afb93bcdab92d8aa), CC BY 4.0.

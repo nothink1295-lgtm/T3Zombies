@@ -69,7 +69,11 @@ export const CONFIG = {
     radius: 0.5,
     detectionRange: 18,
     zombie: {
-      files: ['assets/models/zombie1.glb', 'assets/models/zombies.glb'],
+      files: [
+        'assets/models/zombie1.glb',
+        'assets/models/zombies.glb',
+        'assets/models/toxic_zombie_4_idle_animated.glb',
+      ],
       hp: 2, speed: 2.2, fastSpeed: 3.6,
       attackRange: 0.9, damage: 10, attackCooldown: 1.5,
     },
