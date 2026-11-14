@@ -71,14 +71,9 @@ Las autorías, páginas de origen y licencias de los modelos GLB se obtuvieron d
 - Textura metálica procedural: generada en `src/main.js`, sin recurso externo.
 - Three.js (MIT): https://threejs.org
 
-## Publicar en GitHub
+## Repositorio y video de entrega
 
-```bash
-git init
-git add .
-git commit -m "T3 - T3zombies"
-git branch -M main
-git remote add origin https://github.com/TU_USUARIO/t3zombies.git
-git push -u origin main
-```
-Opcional: activar *GitHub Pages* (Settings > Pages > rama `main`) para el enlace jugable.
+- Repositorio: [T3Zombies en GitHub](https://github.com/nothink1295-lgtm/T3Zombies).
+- Para subir la rama `main` desde esta carpeta, inicia sesión en GitHub y ejecuta `git push -u origin main`.
+- Video demostrativo de máximo 3 minutos: pendiente de grabar y subir.
+- Opcional: activar *GitHub Pages* (Settings > Pages > rama `main`) para el enlace jugable.
