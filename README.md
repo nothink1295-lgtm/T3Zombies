@@ -35,7 +35,7 @@ Los modelos de zombi (`zombie1.glb` y `zombies.glb`), demonios, Necro, pistola (
 | Requerimiento | Implementación (`src/main.js`) |
 |---|---|
 | Pistola y escopeta GLB seleccionables con 1/2; espada adicional en 3 | `loadWeapons`, `selectWeapon`, `shoot` |
-| Armas de fuego: cada clic válido causa como máximo 1 impacto por zombi; el zombi común tiene 2 HP y cae al segundo impacto; la escopeta usa 7 rayos de perdigones | `CONFIG.weapons`, `spawnEnemy`, `shoot`, `hitZombie` |
+| Pistola: 1 de daño (3 impactos al zombi común de 3 HP); escopeta: 3 de daño por zombi alcanzado (1 disparo), con 7 rayos de perdigones | `CONFIG.weapons`, `spawnEnemy`, `shoot`, `hitZombie` |
 | Espada neón cuerpo a cuerpo de dos golpes, con empuje y colisión de paredes | `makeSword`, `shoot`, `hitZombie`, `moveWithCollision` |
 | RF02 Munición por arma de fuego, bloqueo en 0, solo cajas | `ammo[]`, `shoot`, `updatePickups` |
 | Dos laberintos con entrada y salida entre niveles | `src/level.js`, `enterLevel`, `win()` |
@@ -47,7 +47,7 @@ Los modelos de zombi (`zombie1.glb` y `zombies.glb`), demonios, Necro, pistola (
 | Necro: proyectil de hielo y levanta hasta tres zombis | `summonZombies` |
 | Vida y paquetes de curación; sin armadura | `damagePlayer`, `updatePickups`, HUD |
 | Paquetes de vida y munición aumentada por caja | `updatePickups`, `src/level.js` |
-| Charcos de lava letales y trampas de presión que causan daño leve | `addHazard`, `updateHazards`, `src/level.js` |
+| Charcos de lava letales y trampas de presión que restan 30 de vida cada 2,5 s mientras se pisan | `addHazard`, `updateHazards`, `src/level.js` |
 | Manchas de sangre irregulares casi a ras del suelo | `poolGeometry`, `buildLevelWorld` |
 | Bajas: cuerpos se hunden bajo el suelo | `hitZombie`, `updateZombies` |
 | Muros metálicos y zonas de sangre | `wallTex`, material metálico, `bloodTex` |

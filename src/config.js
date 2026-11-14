@@ -45,7 +45,7 @@ export const CONFIG = {
       pellets: 7,
       centerPellets: 3,
       spread: 0.045,
-      damage: 1,
+      damage: 3,
       ammoUnit: 'cartuchos',
       color: '#ff7b2e',
     },
@@ -70,7 +70,7 @@ export const CONFIG = {
     detectionRange: 18,
     zombie: {
       files: ['assets/models/zombie1.glb', 'assets/models/zombies.glb'],
-      hp: 2, speed: 2.2, fastSpeed: 3.6,
+      hp: 3, speed: 2.2, fastSpeed: 3.6,
       attackRange: 0.9, damage: 10, attackCooldown: 1.5,
     },
     demon1: {

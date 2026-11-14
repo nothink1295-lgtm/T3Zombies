@@ -736,7 +736,7 @@ function addHazard(type, c, r) {
   }
   group.add(base, plate, ...spikes);
   scene.add(group);
-  hazards.push({ type, group, radius: 0.95, damage: 5, cooldown: 2.5, nextTrigger: 0 });
+  hazards.push({ type, group, radius: 0.95, damage: 30, cooldown: 2.5, nextTrigger: 0 });
 }
 
 function spawnEntities() {
@@ -781,7 +781,7 @@ function shoot() {
     const hits = raycaster.intersectObjects(targets, false);
     if (hits.length && hits[0].distance < wallDist) {
       const enemy = hits[0].object.userData.zombie;
-      hitZombie(enemy, w.knockback, enemy.type === 'zombie' ? 1 : w.damage);
+      hitZombie(enemy, w.knockback, enemy.type === 'zombie' ? 1.5 : w.damage);
     }
     return;
   }
