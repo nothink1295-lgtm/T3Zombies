@@ -35,7 +35,7 @@ Los modelos de zombi (`zombie1.glb` y `zombies.glb`), demonios, Necro, pistola (
 | Requerimiento | Implementación (`src/main.js`) |
 |---|---|
 | Pistola y escopeta GLB seleccionables con 1/2; espada adicional en 3 | `loadWeapons`, `selectWeapon`, `shoot` |
-| Pistola: 1 de daño (2 impactos al zombi común de 2 HP); escopeta: 3 de daño por zombi alcanzado (1 disparo), con 7 rayos de perdigones | `CONFIG.weapons`, `spawnEnemy`, `shoot`, `hitZombie` |
+| Pistola: 1 de daño (2 impactos contra enemigos de 2 HP); escopeta: 2 de daño por enemigo alcanzado (1 disparo), con 7 rayos de perdigones | `CONFIG.weapons`, `spawnEnemy`, `shoot`, `hitZombie` |
 | Espada neón: elimina a un enemigo de un golpe, con empuje y colisión de paredes | `makeSword`, `shoot`, `hitZombie`, `moveWithCollision` |
 | RF02 Munición por arma de fuego, bloqueo en 0, solo cajas | `ammo[]`, `shoot`, `updatePickups` |
 | Dos laberintos con entrada y salida entre niveles | `src/level.js`, `enterLevel`, `win()` |
