@@ -55,7 +55,7 @@ export const CONFIG = {
       startAmmo: 0,
       range: 2.1,
       cooldown: 0.65,
-      damage: 2,
+      damage: 3,
       knockback: 1.1,
       position: [0.34, -0.3, -0.58],
       rotation: [-0.12, -0.2, -0.18],

@@ -58,25 +58,39 @@ function createLevel(seed, number) {
   const grid = buildMaze(seed);
   const start = [1, 1];
   const exit = [W - 3, H - 2];
+  const labCandidates = [];
+  for (let r = 1; r < H - 1; r += 2) {
+    for (let c = 1; c < W - 1; c += 2) {
+      if (grid[r][c] !== '.' || (c === start[0] && r === start[1]) || (c === exit[0] && r === exit[1])) continue;
+      if (Math.abs(c - start[0]) + Math.abs(r - start[1]) < 8) continue;
+      if (Math.abs(c - exit[0]) + Math.abs(r - exit[1]) < 6) continue;
+      const exits = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+        .filter(([dc, dr]) => grid[r + dr][c + dc] === '.');
+      if (exits.length === 1) labCandidates.push([c, r]);
+    }
+  }
+  const labCells = shuffled(labCandidates, random).slice(0, 3);
+  const labKeys = new Set(labCells.map(([c, r]) => `${c},${r}`));
   const candidates = [];
   for (let r = 1; r < H - 1; r += 2) {
     for (let c = 1; c < W - 1; c += 2) {
       if (grid[r][c] !== '.' || (c === start[0] && r === start[1]) || (c === exit[0] && r === exit[1])) continue;
       if (Math.abs(c - start[0]) + Math.abs(r - start[1]) < 8) continue;
       if (Math.abs(c - exit[0]) + Math.abs(r - exit[1]) < 6) continue;
+      if (labKeys.has(`${c},${r}`)) continue;
       candidates.push([c, r]);
     }
   }
   const available = shuffled(candidates, random);
   const specials = ['demon1', 'demon2', 'demon3', 'necro'];
-  const zombieSpawns = available.slice(0, 22).map(([c, r], i) => [c, r, i % 6 === 0 ? 1 : 0, specials[i] || 'zombie']);
-  const ammoSpawns = available.slice(22, 30).map(([c, r], i) => [c, r, i % 2]);
-  const medkitSpawns = available.slice(30, 35);
-  const bloodCells = available.slice(35, 45);
-  const lavaCells = available.slice(45, 48);
-  const trapCells = available.slice(48, 54);
+  const zombieSpawns = available.slice(0, 26).map(([c, r], i) => [c, r, i % 6 === 0 ? 1 : 0, specials[i] || 'zombie']);
+  const ammoSpawns = available.slice(26, 34).map(([c, r], i) => [c, r, i % 2]);
+  const medkitSpawns = available.slice(34, 39);
+  const bloodCells = available.slice(39, 49);
+  const lavaCells = available.slice(49, 52);
+  const trapCells = available.slice(52, 58);
 
-  return { number, grid, start, exit, zombieSpawns, ammoSpawns, medkitSpawns, bloodCells, lavaCells, trapCells };
+  return { number, grid, start, exit, labCells, zombieSpawns, ammoSpawns, medkitSpawns, bloodCells, lavaCells, trapCells };
 }
 
 export const LEVELS = [createLevel(4817, 1), createLevel(9829, 2)];

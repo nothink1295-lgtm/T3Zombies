@@ -94,6 +94,9 @@ ceiling.position.set((W * CELL) / 2, WALL_H, (H * CELL) / 2);
 scene.add(ceiling);
 
 const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTex, metalness: 0.58, roughness: 0.4 });
+const labSteel = new THREE.MeshStandardMaterial({ color: 0x53636b, metalness: 0.82, roughness: 0.28 });
+const labCabinetMaterial = new THREE.MeshStandardMaterial({ color: 0x263e48, metalness: 0.62, roughness: 0.36 });
+const labSignTextures = new Map();
 const bloodTex = makeTexture((g) => {
   for (let i = 0; i < 8; i++) {
     const x = 20 + Math.random() * 88, y = 20 + Math.random() * 88;
@@ -148,6 +151,129 @@ function addWallLight(parent, c, r, face, color) {
   const light = new THREE.PointLight(color, intensity, 18, 2);
   light.position.set(x + face.dx * 0.22, WALL_H * 0.7, z + face.dz * 0.22);
   parent.add(light);
+}
+
+function getLabSignTexture(label) {
+  if (labSignTextures.has(label)) return labSignTextures.get(label);
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 80;
+  const context = canvas.getContext('2d');
+  context.fillStyle = '#10242a';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.strokeStyle = '#39d8e6';
+  context.lineWidth = 6;
+  context.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+  context.fillStyle = '#c9fbff';
+  context.font = 'bold 42px sans-serif';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(label, canvas.width / 2, canvas.height / 2);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  labSignTextures.set(label, texture);
+  return texture;
+}
+
+function addLabRoom(parent, c, r, labNumber) {
+  const opening = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+    .find(([dx, dz]) => GRID[r + dz][c + dx] === '.');
+  if (!opening) return;
+  const [doorX, doorZ] = opening;
+  const sideX = -doorZ;
+  const sideZ = doorX;
+  const centerX = cellCenter(c);
+  const centerZ = cellCenter(r);
+  const room = new THREE.Group();
+  room.position.set(centerX, 0, centerZ);
+  parent.add(room);
+
+  const floorPad = new THREE.Mesh(
+    new THREE.PlaneGeometry(CELL * 0.82, CELL * 0.82),
+    new THREE.MeshBasicMaterial({ color: 0x12333b, transparent: true, opacity: 0.42, side: THREE.DoubleSide })
+  );
+  floorPad.rotation.x = -Math.PI / 2;
+  floorPad.position.y = 0.026;
+  room.add(floorPad);
+
+  const doorAngle = Math.atan2(doorX, doorZ);
+  const frameMaterial = new THREE.MeshStandardMaterial({
+    color: 0x267d88,
+    emissive: 0x0c5d68,
+    emissiveIntensity: 0.8,
+    metalness: 0.7,
+    roughness: 0.3,
+  });
+  const postGeometry = new THREE.BoxGeometry(0.12, 2.5, 0.12);
+  for (const side of [-1, 1]) {
+    const post = new THREE.Mesh(postGeometry, frameMaterial);
+    post.position.set(doorX * 1.88 + sideX * 1.52 * side, 1.25, doorZ * 1.88 + sideZ * 1.52 * side);
+    room.add(post);
+  }
+  const header = new THREE.Mesh(new THREE.BoxGeometry(3.16, 0.12, 0.12), frameMaterial);
+  header.position.set(doorX * 1.88, 2.5, doorZ * 1.88);
+  header.rotation.y = doorAngle;
+  room.add(header);
+
+  const tableX = -doorX * 0.68;
+  const tableZ = -doorZ * 0.68;
+  const top = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.12, 0.86), labSteel);
+  top.position.set(tableX, 0.96, tableZ);
+  room.add(top);
+  const legGeometry = new THREE.BoxGeometry(0.1, 0.9, 0.1);
+  for (const x of [-0.92, 0.92]) for (const z of [-0.32, 0.32]) {
+    const leg = new THREE.Mesh(legGeometry, labSteel);
+    leg.position.set(tableX + x, 0.45, tableZ + z);
+    room.add(leg);
+  }
+
+  const accent = [0x47e1e9, 0x9cff72, 0xffc85a][(labNumber - 1) % 3];
+  const glass = new THREE.MeshStandardMaterial({
+    color: accent,
+    emissive: accent,
+    emissiveIntensity: 0.22,
+    transparent: true,
+    opacity: 0.78,
+    roughness: 0.18,
+  });
+  const vialGeometry = new THREE.CylinderGeometry(0.07, 0.09, 0.3, 8);
+  for (let i = 0; i < 3; i++) {
+    const vial = new THREE.Mesh(vialGeometry, glass);
+    vial.position.set(tableX + (i - 1) * 0.42, 1.17, tableZ - 0.08);
+    room.add(vial);
+  }
+
+  const monitor = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.38, 0.08), labCabinetMaterial);
+  monitor.position.set(tableX, 1.23, tableZ + 0.27);
+  room.add(monitor);
+  const screen = new THREE.Mesh(
+    new THREE.BoxGeometry(0.48, 0.27, 0.025),
+    new THREE.MeshBasicMaterial({ color: accent, side: THREE.DoubleSide })
+  );
+  screen.position.set(tableX, 1.24, tableZ + 0.315);
+  room.add(screen);
+
+  const cabinet = new THREE.Mesh(new THREE.BoxGeometry(0.65, 1.7, 0.55), labCabinetMaterial);
+  cabinet.position.set(sideX * 1.52, 0.85, sideZ * 1.52);
+  room.add(cabinet);
+  const cabinetLight = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 1.3, 0.03),
+    new THREE.MeshBasicMaterial({ color: accent })
+  );
+  cabinetLight.position.set(sideX * 1.18, 0.92, sideZ * 1.18);
+  room.add(cabinetLight);
+
+  const sign = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.35, 0.42),
+    new THREE.MeshBasicMaterial({ map: getLabSignTexture(`LAB ${level.number}-${String(labNumber).padStart(2, '0')}`), side: THREE.DoubleSide })
+  );
+  sign.position.set(-doorX * 1.94, 2.28, -doorZ * 1.94);
+  sign.rotation.y = doorAngle;
+  room.add(sign);
+
+  const light = new THREE.PointLight(accent, 7, 6, 2);
+  light.position.y = 2.7;
+  room.add(light);
 }
 
 function poolGeometry(width, depth) {
@@ -227,6 +353,7 @@ function buildLevelWorld() {
     stain.position.set(cellCenter(c), 0.003, cellCenter(r));
     worldGroup.add(stain);
   }
+  level.labCells.forEach(([c, r], i) => addLabRoom(worldGroup, c, r, i + 1));
 }
 
 buildLevelWorld();
@@ -781,7 +908,7 @@ function shoot() {
     const hits = raycaster.intersectObjects(targets, false);
     if (hits.length && hits[0].distance < wallDist) {
       const enemy = hits[0].object.userData.zombie;
-      hitZombie(enemy, w.knockback, enemy.type === 'zombie' ? 1.5 : w.damage);
+      hitZombie(enemy, w.knockback, w.damage);
     }
     return;
   }
@@ -1009,7 +1136,8 @@ function updateZombies(dt) {
       if (z.mixer) z.mixer.timeScale = 1;
     }
 
-    if (z.type === 'zombie' && dist <= CONFIG.enemy.radius + CONFIG.player.radius) {
+    if (z.type === 'zombie' && dist <= CONFIG.enemy.radius + CONFIG.player.radius
+      && !isAttackBlocked(pos.x, pos.z)) {
       gameOver('Un zombi te ha atrapado.');
       return;
     }
