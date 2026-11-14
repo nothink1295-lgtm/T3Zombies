@@ -35,15 +35,15 @@ Los tres modelos de zombi (`zombie1.glb`, `zombies.glb` y `toxic_zombie_4_idle_a
 | Requerimiento | Implementación (`src/main.js`) |
 |---|---|
 | Pistola y escopeta GLB seleccionables con 1/2; espada adicional en 3 | `loadWeapons`, `selectWeapon`, `shoot` |
-| Pistola: 1 de daño (2 impactos contra enemigos de 2 HP); escopeta: 2 de daño por enemigo alcanzado (1 disparo), con 7 rayos de perdigones | `CONFIG.weapons`, `spawnEnemy`, `shoot`, `hitZombie` |
-| Espada neón: elimina a un enemigo de un golpe, con empuje y colisión de paredes | `makeSword`, `shoot`, `hitZombie`, `moveWithCollision` |
+| Pistola y escopeta: 1 de daño por enemigo alcanzado en cada clic; ambos requieren dos impactos válidos contra enemigos de 2 HP. La escopeta usa 7 rayos, pero cada enemigo recibe como máximo un impacto por clic | `CONFIG.weapons`, `spawnEnemy`, `shoot`, `hitZombie` |
+| Espada neón: dos impactos para eliminar a un enemigo de 2 HP, con empuje y colisión de paredes | `makeSword`, `shoot`, `hitZombie`, `moveWithCollision` |
 | RF02 Munición por arma de fuego, bloqueo en 0, solo cajas | `ammo[]`, `shoot`, `updatePickups` |
 | Dos laberintos con entrada y salida entre niveles | `src/level.js`, `enterLevel`, `win()` |
 | Tres cuartos de laboratorio pequeños por nivel, con mesas, muestras, gabinetes y rótulos | `labCells`, `addLabRoom`, `src/level.js` |
 | Tres modelos de zombi individuales y cuatro tipos de infectados especiales | `loadCharacterModels`, `spawnEnemy` |
 | Los infectados permanecen inactivos fuera del rango configurable y persiguen al jugador por los pasillos cuando se activan | `CONFIG.enemy.detectionRange`, `buildEnemyDistanceField`, `updateZombies` |
 | RF09: un zombi causa Game Over al entrar en contacto con el jugador; el juego se detiene y permite reiniciar | `updateZombies`, `gameOver`, `resetGame` |
-| Mantener clic derecho con espada bloquea ataques frontales | `isAttackBlocked`, controles de ratón |
+| Mantener clic derecho con espada bloquea ataques frontales; el contacto físico con un zombi sigue causando Game Over | `isAttackBlocked`, controles de ratón, `updateZombies` |
 | Demon 1: proyectil de veneno morado; Demon 2: dos cohetes; Demon 3: fuego | `fireProjectile`, `updateZombies` |
 | Necro: proyectil de hielo y levanta hasta tres zombis | `summonZombies` |
 | Vida y paquetes de curación; sin armadura | `damagePlayer`, `updatePickups`, HUD |

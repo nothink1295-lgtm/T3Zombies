@@ -1136,8 +1136,7 @@ function updateZombies(dt) {
       if (z.mixer) z.mixer.timeScale = 1;
     }
 
-    if (z.type === 'zombie' && dist <= CONFIG.enemy.radius + CONFIG.player.radius
-      && !isAttackBlocked(pos.x, pos.z)) {
+    if (z.type === 'zombie' && dist <= CONFIG.enemy.radius + CONFIG.player.radius) {
       gameOver('Un zombi te ha atrapado.');
       return;
     }
@@ -1165,7 +1164,8 @@ function updateZombies(dt) {
         z.attackT = z.attackCooldown;
       }
       if (state !== 'playing') return;
-      if (z.type === 'zombie' || dist <= z.attackRange * 0.8) continue;
+      if (z.type === 'zombie' && isAttackBlocked(pos.x, pos.z)) continue;
+      if (z.type !== 'zombie' && dist <= z.attackRange * 0.8) continue;
     }
     const waypoint = enemyWaypoint(pos.x, pos.z, distances);
     const pathX = waypoint.x - pos.x, pathZ = waypoint.z - pos.z;
@@ -1279,7 +1279,7 @@ function win() {
     return;
   }
   endGame('won');
-  showScreen('¡MISIÓN COMPLETADA!', 'Has escapado de los dos niveles.', 'JUGAR DE NUEVO', 'won');
+  showScreen('¡MISIÓN COMPLETADA!', 'Has llegado a la zona de extracción.', 'JUGAR DE NUEVO', 'won');
   beep(500, 1000, 0.5, 'sine', 0.15);
 }
 function gameOver(message = 'Te han derrotado los infectados.') {
