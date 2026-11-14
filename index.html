@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>T3zombies</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="hud">
+    <div id="crosshair"></div>
+    <div id="hitmarker"></div>
+    <div id="weapons"></div>
+    <div id="status">
+      NIVEL: <b id="level">1</b> &nbsp;|&nbsp; ZOMBIS: <b id="zcount">0</b> &nbsp;|&nbsp; SALIDA: <b id="dist">0</b> m
+    </div>
+    <div id="vitals">
+      <div class="vital"><span>VIDA</span><div class="bar"><i id="healthbar"></i></div><b id="health">100</b></div>
+    </div>
+    <div id="msg"></div>
+    <div id="damage"></div>
+  </div>
+
+  <div id="overlay">
+    <div class="panel">
+      <h1 id="title">T3zombies</h1>
+      <p id="subtitle"></p>
+      <p id="modelwarn"></p>
+      <button id="btn" disabled>CARGANDO…</button>
+      <div class="controls">
+        <b>W A S D</b> mover &nbsp;·&nbsp; <b>Mouse</b> apuntar &nbsp;·&nbsp;
+        <b>Clic izq.</b> disparar / atacar &nbsp;·&nbsp; <b>Mantener clic der.</b> bloquear con espada &nbsp;·&nbsp; <b>1</b> pistola, <b>2</b> escopeta, <b>3</b> espada
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

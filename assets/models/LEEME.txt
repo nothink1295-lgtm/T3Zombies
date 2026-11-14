@@ -1,0 +1,15 @@
+Modelos de personajes incluidos:
+
+  zombie1.glb -> Zombi individual 1
+  zombies.glb -> Zombi individual 2
+  demon1.glb  -> Demon 1, proyectil morado
+  demon2.glb  -> Demon 2, lanza dos cohetes
+  demon3.glb  -> Demon 3, lanza fuego
+  necro.glb   -> Necro, hielo y tres zombis invocados
+  pistola_9mm.glb -> Pistola
+  escopeta_mr_meat.glb -> Escopeta
+  metalico.jpg -> Recurso local no utilizado; los muros usan una textura procedural
+
+Si falta un modelo de arma, el juego muestra un marcador.
+El jugador usa vista en primera persona; no se necesita un modelo de personaje.
+Consulta README.md para completar las fuentes y licencias de los recursos.
