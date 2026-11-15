@@ -69,7 +69,8 @@ function createLevel(seed, number) {
       if (exits.length === 1) labCandidates.push([c, r]);
     }
   }
-  const labCells = shuffled(labCandidates, random).slice(0, 3);
+  const labCount = Math.min(4 + Math.floor(random() * 3), labCandidates.length);
+  const labCells = shuffled(labCandidates, random).slice(0, labCount);
   const labKeys = new Set(labCells.map(([c, r]) => `${c},${r}`));
   const candidates = [];
   for (let r = 1; r < H - 1; r += 2) {
@@ -83,12 +84,12 @@ function createLevel(seed, number) {
   }
   const available = shuffled(candidates, random);
   const specials = ['demon1', 'demon2', 'demon3', 'necro'];
-  const zombieSpawns = available.slice(0, 26).map(([c, r], i) => [c, r, i % 6 === 0 ? 1 : 0, specials[i] || 'zombie']);
-  const ammoSpawns = available.slice(26, 34).map(([c, r], i) => [c, r, i % 2]);
-  const medkitSpawns = available.slice(34, 39);
-  const bloodCells = available.slice(39, 49);
-  const lavaCells = available.slice(49, 52);
-  const trapCells = available.slice(52, 58);
+  const zombieSpawns = available.slice(0, 34).map(([c, r], i) => [c, r, i % 6 === 0 ? 1 : 0, specials[i] || 'zombie']);
+  const ammoSpawns = available.slice(34, 42).map(([c, r], i) => [c, r, i % 2]);
+  const medkitSpawns = available.slice(42, 50);
+  const bloodCells = available.slice(50, 60);
+  const lavaCells = available.slice(60, 63);
+  const trapCells = available.slice(63, 75);
 
   return { number, grid, start, exit, labCells, zombieSpawns, ammoSpawns, medkitSpawns, bloodCells, lavaCells, trapCells };
 }

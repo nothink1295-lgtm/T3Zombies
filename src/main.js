@@ -96,6 +96,12 @@ scene.add(ceiling);
 const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTex, metalness: 0.58, roughness: 0.4 });
 const labSteel = new THREE.MeshStandardMaterial({ color: 0x53636b, metalness: 0.82, roughness: 0.28 });
 const labCabinetMaterial = new THREE.MeshStandardMaterial({ color: 0x263e48, metalness: 0.62, roughness: 0.36 });
+const labDoorMaterial = new THREE.MeshStandardMaterial({ color: 0x344c55, metalness: 0.86, roughness: 0.24 });
+const labDoorAccent = new THREE.MeshStandardMaterial({ color: 0x35dce8, emissive: 0x08717b, emissiveIntensity: 1.6, metalness: 0.35, roughness: 0.24 });
+const armorMaterial = new THREE.MeshStandardMaterial({ color: 0x49cde0, emissive: 0x126b78, emissiveIntensity: 0.8, metalness: 0.74, roughness: 0.25 });
+const armorCoreMaterial = new THREE.MeshBasicMaterial({ color: 0xb5fbff });
+const shieldMaterial = new THREE.MeshStandardMaterial({ color: 0x42aaff, emissive: 0x145cb0, emissiveIntensity: 1.1, metalness: 0.55, roughness: 0.2 });
+const shieldCoreMaterial = new THREE.MeshBasicMaterial({ color: 0xe7fbff });
 const labSignTextures = new Map();
 const bloodTex = makeTexture((g) => {
   for (let i = 0; i < 8; i++) {
@@ -113,6 +119,7 @@ const bloodTex = makeTexture((g) => {
 }, 1, 1);
 const worldGroup = new THREE.Group();
 scene.add(worldGroup);
+const labDoors = [];
 const LIGHT_FACES = [
   { dx: 0, dz: -1, rotation: Math.PI },
   { dx: 0, dz: 1, rotation: 0 },
@@ -215,6 +222,34 @@ function addLabRoom(parent, c, r, labNumber) {
   header.rotation.y = doorAngle;
   room.add(header);
 
+  const doorAssembly = new THREE.Group();
+  doorAssembly.position.set(doorX * 1.88, 0, doorZ * 1.88);
+  doorAssembly.rotation.y = doorAngle;
+  const panels = [];
+  for (const side of [-1, 1]) {
+    const panelGroup = new THREE.Group();
+    panelGroup.position.set(side * 0.76, 1.18, 0);
+    panelGroup.add(new THREE.Mesh(new THREE.BoxGeometry(1.48, 2.3, 0.14), labDoorMaterial));
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.9, 0.035), labDoorAccent);
+    stripe.position.set(-side * 0.28, 0, 0.085);
+    panelGroup.add(stripe);
+    doorAssembly.add(panelGroup);
+    panels.push(panelGroup);
+  }
+  room.add(doorAssembly);
+  labDoors.push({
+    leftPanel: panels[0],
+    rightPanel: panels[1],
+    x: centerX + doorX * 1.88,
+    z: centerZ + doorZ * 1.88,
+    dx: doorX,
+    dz: doorZ,
+    sideX,
+    sideZ,
+    openAmount: 0,
+    targetOpen: false,
+  });
+
   const tableX = -doorX * 0.68;
   const tableZ = -doorZ * 0.68;
   const top = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.12, 0.86), labSteel);
@@ -293,6 +328,7 @@ function poolGeometry(width, depth) {
 
 function buildLevelWorld() {
   worldGroup.clear();
+  labDoors.length = 0;
   let wallCount = 0;
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (GRID[r][c] === '#') wallCount++;
   const walls = new THREE.InstancedMesh(new THREE.BoxGeometry(CELL, WALL_H, CELL), wallMaterial, wallCount);
@@ -364,7 +400,14 @@ buildLevelWorld();
 function isWallAt(x, z) {
   const c = Math.floor(x / CELL), r = Math.floor(z / CELL);
   if (c < 0 || r < 0 || c >= W || r >= H) return true;
-  return GRID[r][c] === '#';
+  return GRID[r][c] === '#' || labDoors.some((door) => isPointInsideClosedDoor(x, z, door));
+}
+function isPointInsideClosedDoor(x, z, door, radius = 0) {
+  if (door.openAmount >= 0.82) return false;
+  const dx = x - door.x, dz = z - door.z;
+  const along = dx * door.dx + dz * door.dz;
+  const across = dx * door.sideX + dz * door.sideZ;
+  return Math.abs(along) <= 0.18 + radius && Math.abs(across) <= 1.52 + radius;
 }
 function blocked(x, z, rad) {
   const c0 = Math.floor((x - rad) / CELL), c1 = Math.floor((x + rad) / CELL);
@@ -377,7 +420,7 @@ function blocked(x, z, rad) {
       if ((x - closestX) ** 2 + (z - closestZ) ** 2 < rad ** 2) return true;
     }
   }
-  return false;
+  return labDoors.some((door) => isPointInsideClosedDoor(x, z, door, rad));
 }
 function moveWithCollision(pos, dx, dz, rad) {
   const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dz)) / Math.max(rad * 0.5, 0.1)));
@@ -387,12 +430,34 @@ function moveWithCollision(pos, dx, dz, rad) {
     if (!blocked(pos.x, pos.z + stepZ, rad)) pos.z += stepZ;
   }
 }
+function updateLabDoors(dt) {
+  for (const door of labDoors) {
+    const playerDistance = Math.hypot(player.x - door.x, player.z - door.z);
+    const enemyNearby = zombies.some((z) => z.state !== 'dead' && !z.raising
+      && Math.hypot(z.group.position.x - door.x, z.group.position.z - door.z) < 3.2);
+    if (playerDistance < 3.2 || enemyNearby) door.targetOpen = true;
+    else if (playerDistance > 4.2 && !enemyNearby) door.targetOpen = false;
+
+    const target = door.targetOpen ? 1 : 0;
+    door.openAmount += (target - door.openAmount) * (1 - Math.exp(-9 * dt));
+    if (Math.abs(target - door.openAmount) < 0.001) door.openAmount = target;
+    door.leftPanel.position.x = -(0.76 + 1.45 * door.openAmount);
+    door.rightPanel.position.x = 0.76 + 1.45 * door.openAmount;
+  }
+}
 const PATH_DIRECTIONS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-function buildEnemyDistanceField() {
+function buildEnemyDistanceField(avoidTraps = false) {
   const distances = new Int16Array(W * H);
   distances.fill(-1);
   const startC = Math.floor(player.x / CELL), startR = Math.floor(player.z / CELL);
   if (startC < 0 || startR < 0 || startC >= W || startR >= H || GRID[startR][startC] === '#') return null;
+  const trapCells = avoidTraps
+    ? new Set(hazards.filter((hazard) => hazard.type === 'trap').map((hazard) => {
+      const c = Math.floor(hazard.group.position.x / CELL);
+      const r = Math.floor(hazard.group.position.z / CELL);
+      return r * W + c;
+    }))
+    : null;
 
   const queue = new Int16Array(W * H);
   const start = startR * W + startC;
@@ -407,6 +472,7 @@ function buildEnemyDistanceField() {
       const nc = c + dc, nr = r + dr;
       if (nc < 0 || nr < 0 || nc >= W || nr >= H || GRID[nr][nc] === '#') continue;
       const next = nr * W + nc;
+      if (trapCells && next !== start && trapCells.has(next)) continue;
       if (distances[next] !== -1) continue;
       distances[next] = distances[current] + 1;
       queue[tail++] = next;
@@ -414,12 +480,28 @@ function buildEnemyDistanceField() {
   }
   return distances;
 }
-function enemyWaypoint(x, z, distances) {
-  if (!distances) return { x: player.x, z: player.z };
+function enemyWaypoint(x, z, preferredDistances, fallbackDistances) {
+  if (!preferredDistances && !fallbackDistances) return { x: player.x, z: player.z };
   const c = Math.floor(x / CELL), r = Math.floor(z / CELL);
   if (c < 0 || r < 0 || c >= W || r >= H) return { x: player.x, z: player.z };
   const current = r * W + c;
-  if (distances[current] <= 0) return { x: player.x, z: player.z };
+  const preferredDistance = preferredDistances ? preferredDistances[current] : -1;
+  if (preferredDistance < 0 && preferredDistances) {
+    let safeC = -1, safeR = -1, bestSafeDistance = Infinity;
+    for (const [dc, dr] of PATH_DIRECTIONS) {
+      const nc = c + dc, nr = r + dr;
+      if (nc < 0 || nr < 0 || nc >= W || nr >= H) continue;
+      const distance = preferredDistances[nr * W + nc];
+      if (distance >= 0 && distance < bestSafeDistance) {
+        safeC = nc;
+        safeR = nr;
+        bestSafeDistance = distance;
+      }
+    }
+    if (safeC >= 0) return { x: cellCenter(safeC), z: cellCenter(safeR) };
+  }
+  const distances = preferredDistance >= 0 ? preferredDistances : fallbackDistances;
+  if (!distances || distances[current] <= 0) return { x: player.x, z: player.z };
 
   let bestC = c, bestR = r, bestDistance = distances[current];
   for (const [dc, dr] of PATH_DIRECTIONS) {
@@ -437,7 +519,7 @@ function enemyWaypoint(x, z, distances) {
 // ¿Hay línea de visión libre entre dos puntos? (para ataques)
 function lineClear(ax, az, bx, bz) {
   const dx = bx - ax, dz = bz - az;
-  const steps = Math.ceil(Math.hypot(dx, dz) / 0.5);
+  const steps = Math.ceil(Math.hypot(dx, dz) / 0.2);
   for (let i = 1; i < steps; i++) if (isWallAt(ax + (dx * i) / steps, az + (dz * i) / steps)) return false;
   return true;
 }
@@ -635,6 +717,9 @@ let yaw = 0, pitch = 0;
 let current = 0;
 let ammo = [];
 let health = CONFIG.player.maxHealth;
+let armorTimeRemaining = 0;
+let shieldCharges = 0;
+let shieldProtectionRemaining = 0;
 let defending = false;
 let nextShot = 0;
 let recoil = 0, muzzleFlash = 0, bobT = 0;
@@ -676,9 +761,25 @@ function updateHUD() {
   $('zcount').textContent = zombies.filter((z) => z.state !== 'dead').length;
   $('health').textContent = Math.ceil(health);
   $('healthbar').style.width = `${(health / CONFIG.player.maxHealth) * 100}%`;
+  const armorRemaining = Math.ceil(armorTimeRemaining);
+  const armorMinutes = Math.floor(armorRemaining / 60);
+  const armorSeconds = armorRemaining % 60;
+  $('armor').textContent = armorRemaining
+    ? `${String(armorMinutes).padStart(2, '0')}:${String(armorSeconds).padStart(2, '0')}`
+    : 'NO';
+  $('armor').classList.toggle('active', armorRemaining > 0);
+  $('shield').textContent = shieldCharges;
   const dx = (EX.x0 + EX.x1) / 2 - player.x, dz = (EX.z0 + EX.z1) / 2 - player.z;
   $('dist').textContent = Math.round(Math.hypot(dx, dz));
   $('level').textContent = level.number;
+}
+function updatePowerupTimers(dt) {
+  if (armorTimeRemaining > 0) {
+    armorTimeRemaining = Math.max(0, armorTimeRemaining - dt);
+    if (armorTimeRemaining === 0) showMsg('ARMADURA AGOTADA', 1300);
+  }
+  if (shieldProtectionRemaining > 0)
+    shieldProtectionRemaining = Math.max(0, shieldProtectionRemaining - dt);
 }
 function showScreen(title, text, btn, cls = '') {
   $('title').textContent = title;
@@ -690,9 +791,87 @@ function showScreen(title, text, btn, cls = '') {
 function hideScreen() { $('overlay').classList.add('hidden'); }
 
 // ------------------------------------------------------------
-// Audio sintetizado (sin archivos externos)
+// Audio local y efectos sintetizados
 // ------------------------------------------------------------
 let actx = null;
+const soundEffects = {
+  pistol: new Audio('assets/audio/pistol-shot.mp3'),
+  shotgun: new Audio('assets/audio/shotgun-blast.mp3'),
+  zombie: new Audio('assets/audio/zombie-growl.mp3'),
+  demonLaugh: new Audio('assets/audio/demon-laugh.mp3'),
+  demonThreat: new Audio('assets/audio/demon-threat.mp3'),
+};
+Object.values(soundEffects).forEach((sound) => { sound.preload = 'auto'; });
+let zombieSoundPlaying = false;
+const demonVoiceQueue = [];
+let demonVoicePlaying = false;
+
+function playSound(sound, label, volume = 0.75) {
+  const instance = sound.cloneNode();
+  instance.volume = volume;
+  const promise = instance.play();
+  if (promise) promise.catch((error) => console.warn(`No se pudo reproducir ${label}.`, error));
+}
+
+function playZombieSound() {
+  if (zombieSoundPlaying) return false;
+  zombieSoundPlaying = true;
+  const instance = soundEffects.zombie.cloneNode();
+  instance.volume = 0.55;
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    zombieSoundPlaying = false;
+  };
+  instance.addEventListener('ended', finish, { once: true });
+  instance.addEventListener('error', () => {
+    if (finished) return;
+    console.error('No se pudo cargar el gruñido del zombi.');
+    finish();
+  }, { once: true });
+  const promise = instance.play();
+  if (promise) promise.catch((error) => {
+    if (finished) return;
+    console.error('No se pudo reproducir el gruñido del zombi.', error);
+    finish();
+  });
+  return true;
+}
+
+function queueDemonVoice(sound, label) {
+  demonVoiceQueue.push({ sound, label });
+  playNextDemonVoice();
+}
+
+function playNextDemonVoice() {
+  if (demonVoicePlaying) return;
+  const next = demonVoiceQueue.shift();
+  if (!next) return;
+  demonVoicePlaying = true;
+  const instance = next.sound.cloneNode();
+  instance.volume = 0.8;
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    demonVoicePlaying = false;
+    playNextDemonVoice();
+  };
+  instance.addEventListener('ended', finish, { once: true });
+  instance.addEventListener('error', () => {
+    if (finished) return;
+    console.error(`No se pudo cargar el audio ${next.label}.`);
+    finish();
+  }, { once: true });
+  const promise = instance.play();
+  if (promise) promise.catch((error) => {
+    if (finished) return;
+    console.error(`No se pudo reproducir ${next.label}.`, error);
+    finish();
+  });
+}
+
 function beep(f0, f1, dur, type = 'square', vol = 0.12) {
   if (!actx) return;
   const o = actx.createOscillator(), g = actx.createGain();
@@ -773,6 +952,7 @@ function spawnEnemy(type, x, z, fast = false, raising = false) {
   const enemy = {
     type, group, body, hit, healthBar, fill, mixer, hp, maxHp: hp,
     state: 'idle',
+    hasAnnounced: false,
     speed: (fast && settings.fastSpeed ? settings.fastSpeed : settings.speed) * (0.9 + Math.random() * 0.2),
     attackRange: settings.attackRange,
     damage: settings.damage,
@@ -790,7 +970,7 @@ function spawnEnemy(type, x, z, fast = false, raising = false) {
   return enemy;
 }
 
-function addPickup(type, c, r, weapon) {
+function addPickup(type, c, r, weapon, offsetX = 0, offsetZ = 0) {
   const mesh = new THREE.Group();
   let baseY = 0.7;
   if (type === 'ammo') {
@@ -807,8 +987,25 @@ function addPickup(type, c, r, weapon) {
     crossV.position.z = 0.25;
     crossH.position.z = 0.25;
     mesh.add(bottle, crossV, crossH);
+  } else if (type === 'armor') {
+    baseY = 0.9;
+    const chest = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.48, 0.2), armorMaterial);
+    const leftShoulder = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.2, 0.24), armorMaterial);
+    leftShoulder.position.set(-0.3, 0.17, 0);
+    const rightShoulder = leftShoulder.clone();
+    rightShoulder.position.x = 0.3;
+    const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.1, 0), armorCoreMaterial);
+    core.position.set(0, 0.02, 0.14);
+    mesh.add(chest, leftShoulder, rightShoulder, core);
+  } else if (type === 'shield') {
+    baseY = 0.85;
+    const shield = new THREE.Mesh(new THREE.OctahedronGeometry(0.31, 0), shieldMaterial);
+    shield.scale.set(0.78, 1.15, 0.46);
+    const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.11, 0), shieldCoreMaterial);
+    core.position.set(0, 0, 0.15);
+    mesh.add(shield, core);
   }
-  mesh.position.set(cellCenter(c), baseY, cellCenter(r));
+  mesh.position.set(cellCenter(c) + offsetX, baseY, cellCenter(r) + offsetZ);
   scene.add(mesh);
   pickups.push({ mesh, type, weapon, baseY, taken: false });
 }
@@ -863,7 +1060,16 @@ function addHazard(type, c, r) {
   }
   group.add(base, plate, ...spikes);
   scene.add(group);
-  hazards.push({ type, group, radius: 0.95, damage: 30, cooldown: 2.5, nextTrigger: 0 });
+  hazards.push({
+    type,
+    group,
+    radius: 0.95,
+    damage: 30,
+    enemyDamage: 1,
+    cooldown: 2.5,
+    nextTrigger: 0,
+    enemyNextTrigger: new Map(),
+  });
 }
 
 function spawnEntities() {
@@ -873,6 +1079,15 @@ function spawnEntities() {
     addPickup('ammo', c, r, wi);
   }
   for (const [c, r] of level.medkitSpawns) addPickup('health', c, r);
+  level.labCells.forEach(([c, r], i) => {
+    const [doorX, doorZ] = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+      .find(([dx, dz]) => GRID[r + dz][c + dx] === '.');
+    const sideX = -doorZ, sideZ = doorX;
+    addPickup('armor', c, r, undefined, doorX * 0.9, doorZ * 0.9);
+    addPickup('shield', c, r, undefined, sideX * 1.15, sideZ * 1.15);
+    addPickup('ammo', c, r, i % 2, -sideX * 1.15, -sideZ * 1.15);
+    addPickup('health', c, r, undefined, doorX * 0.55 + sideX * 0.9, doorZ * 0.55 + sideZ * 0.9);
+  });
   for (const [c, r] of level.lavaCells) addHazard('lava', c, r);
   for (const [c, r] of level.trapCells) addHazard('trap', c, r);
 }
@@ -923,7 +1138,8 @@ function shoot() {
   ammo[current]--;
   nextShot = now + w.cooldown;
   recoil = 1; muzzleFlash = 1;
-  beep(180, 40, 0.14, 'sawtooth', 0.15);
+  if (current === 0) playSound(soundEffects.pistol, 'el disparo de pistola');
+  else playSound(soundEffects.shotgun, 'el disparo de escopeta', 0.85);
 
   // La escopeta lanza varios perdigones, pero consume munición una vez por clic.
   camera.updateMatrixWorld();
@@ -991,7 +1207,9 @@ function hitZombie(z, knockback = 0, damage = 1) {
 }
 
 function damagePlayer(amount, deathMessage = 'Te han derrotado los infectados.') {
-  health = Math.max(0, health - amount);
+  if (shieldProtectionRemaining > 0) return;
+  const damage = armorTimeRemaining > 0 ? amount * 0.5 : amount;
+  health = Math.max(0, health - damage);
   $('damage').classList.add('show');
   setTimeout(() => $('damage').classList.remove('show'), 180);
   updateHUD();
@@ -1105,6 +1323,7 @@ function updatePlayer(dt) {
 
 function updateZombies(dt) {
   const distances = buildEnemyDistanceField();
+  const safeDistances = buildEnemyDistanceField(true);
   for (const z of zombies) {
     if (z.mixer) z.mixer.update(dt);
     const pos = z.group.position;
@@ -1135,10 +1354,31 @@ function updateZombies(dt) {
       z.state = 'active';
       if (z.mixer) z.mixer.timeScale = 1;
     }
+    if (!z.hasAnnounced && lineClear(pos.x, pos.z, player.x, player.z)) {
+      if (z.type === 'zombie') {
+        z.hasAnnounced = playZombieSound();
+      } else {
+        z.hasAnnounced = true;
+        const voice = z.type === 'demon1'
+          ? [soundEffects.demonLaugh, 'la risa del demonio']
+          : [soundEffects.demonThreat, 'la voz del demonio'];
+        queueDemonVoice(voice[0], voice[1]);
+      }
+    }
 
-    if (z.type === 'zombie' && dist <= CONFIG.enemy.radius + CONFIG.player.radius) {
-      gameOver('Un zombi te ha atrapado.');
-      return;
+    damageEnemyFromTraps(z, clock.elapsedTime);
+    if (z.state === 'dead') continue;
+
+    if (dist <= CONFIG.enemy.radius + CONFIG.player.radius && armorTimeRemaining <= 0) {
+      const canUseShield = shieldCharges > 0 && shieldProtectionRemaining <= 0;
+      gameOver(z.type === 'zombie' ? 'Un zombi te ha atrapado.' : 'Un infectado especial te ha atrapado.');
+      if (state !== 'playing') return;
+      if (canUseShield && shieldProtectionRemaining > 0) {
+        const distance = Math.hypot(pos.x - player.x, pos.z - player.z);
+        if (distance > 0) moveWithCollision(pos, ((pos.x - player.x) / distance) * 1.2, ((pos.z - player.z) / distance) * 1.2, CONFIG.enemy.radius);
+        continue;
+      }
+      if (shieldProtectionRemaining > 0) continue;
     }
 
     const canAttack = dist <= z.attackRange && lineClear(pos.x, pos.z, player.x, player.z);
@@ -1167,13 +1407,26 @@ function updateZombies(dt) {
       if (z.type === 'zombie' && isAttackBlocked(pos.x, pos.z)) continue;
       if (z.type !== 'zombie' && dist <= z.attackRange * 0.8) continue;
     }
-    const waypoint = enemyWaypoint(pos.x, pos.z, distances);
+    const waypoint = enemyWaypoint(pos.x, pos.z, safeDistances, distances);
     const pathX = waypoint.x - pos.x, pathZ = waypoint.z - pos.z;
     const pathDistance = Math.hypot(pathX, pathZ);
     if (pathDistance > 0.01) {
       z.group.rotation.y = Math.atan2(pathX, pathZ) + CONFIG.enemy.yawOffset;
       const step = Math.min(z.speed * dt, pathDistance);
       moveWithCollision(pos, (pathX / pathDistance) * step, (pathZ / pathDistance) * step, CONFIG.enemy.radius);
+    }
+  }
+}
+
+function damageEnemyFromTraps(enemy, t) {
+  for (const hazard of hazards) {
+    if (hazard.type !== 'trap') continue;
+    const distance = Math.hypot(hazard.group.position.x - enemy.group.position.x, hazard.group.position.z - enemy.group.position.z);
+    const nextTrigger = hazard.enemyNextTrigger.get(enemy) || 0;
+    if (distance < hazard.radius && t >= nextTrigger) {
+      hazard.enemyNextTrigger.set(enemy, t + 1);
+      hitZombie(enemy, 0, hazard.enemyDamage);
+      if (enemy.state === 'dead') return;
     }
   }
 }
@@ -1235,6 +1488,14 @@ function updatePickups(dt, t) {
         health = Math.min(CONFIG.player.maxHealth, health + CONFIG.player.medkitHealth);
         showMsg(`+${CONFIG.player.medkitHealth} VIDA`);
         beep(500, 900, 0.15, 'sine', 0.12);
+      } else if (p.type === 'armor') {
+        armorTimeRemaining = 60;
+        showMsg('ARMADURA ACTIVADA · 01:00');
+        beep(560, 1120, 0.2, 'sine', 0.14);
+      } else if (p.type === 'shield') {
+        shieldCharges++;
+        showMsg('ESCUDO +1 · SALVA DE UN GAME OVER');
+        beep(640, 1180, 0.2, 'sine', 0.14);
       }
       updateHUD();
     }
@@ -1284,6 +1545,16 @@ function win() {
 }
 function gameOver(message = 'Te han derrotado los infectados.') {
   if (state !== 'playing') return;
+  if (shieldProtectionRemaining > 0) return;
+  if (shieldCharges > 0) {
+    shieldCharges--;
+    health = Math.max(health, 30);
+    shieldProtectionRemaining = 2.5;
+    updateHUD();
+    showMsg('¡EL ESCUDO EVITÓ EL GAME OVER!', 1800);
+    beep(620, 1250, 0.25, 'sine', 0.16);
+    return;
+  }
   endGame('lost');
   $('damage').classList.add('show');
   showScreen('GAME OVER', message, 'REINICIAR', 'lost');
@@ -1298,6 +1569,9 @@ function resetGame() {
   zombieVariantBag = [];
   ammo = CONFIG.weapons.map((w) => w.startAmmo);
   health = CONFIG.player.maxHealth;
+  armorTimeRemaining = 0;
+  shieldCharges = 0;
+  shieldProtectionRemaining = 0;
   defending = false;
   summonedZombies = 0;
   player.set(cellCenter(level.start[0]), 0, cellCenter(level.start[1]));
@@ -1373,7 +1647,9 @@ function loop() {
   const dt = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
   if (state === 'playing') {
+    updatePowerupTimers(dt);
     updatePlayer(dt);
+    if (state === 'playing') updateLabDoors(dt);
     if (state === 'playing') updateHazards(t);
     if (state === 'playing') updateZombies(dt);
     if (state === 'playing') updateProjectiles(dt);

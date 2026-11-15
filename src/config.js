@@ -45,7 +45,7 @@ export const CONFIG = {
       pellets: 7,
       centerPellets: 3,
       spread: 0.045,
-      damage: 1,
+      damage: 2,
       ammoUnit: 'cartuchos',
       color: '#ff7b2e',
     },
